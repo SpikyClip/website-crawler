@@ -1,4 +1,6 @@
 .venv
 .vscode
 test_pages
+crawls
 *.ipynb
+__pycache__

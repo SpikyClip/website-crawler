@@ -76,20 +76,25 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'webcrawler.pipelines.WebcrawlerPipeline': 300,
-# }
+ITEM_PIPELINES = {
+    # "scrapy.pipelines.files.FilesPipeline": 1,
+    "webcrawler.pipelines.MyFilesPipeline": 1,
+}
 
+FILES_STORE = "D:/scrape_downloads"
+
+DOWNLOAD_MAXSIZE = 2147483648
+DOWNLOAD_WARNSIZE = 1073741824
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-# AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-# AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
-# AUTOTHROTTLE_MAX_DELAY = 60
+AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-# AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
 # AUTOTHROTTLE_DEBUG = False
 
@@ -100,3 +105,21 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 
 # HTTPCACHE_DIR = 'httpcache'
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+FEEDS = {
+    "items.csv": {
+        "format": "csv",
+    }
+}
+
+FEED_EXPORT_FIELDS = [
+    "title",
+    "extension",
+    "quality",
+    "req_url",
+    "iframe_url",
+    "file_urls",
+    "files",
+]
+
+# LOG_FILE = "log.txt"

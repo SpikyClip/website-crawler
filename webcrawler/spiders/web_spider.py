@@ -1,4 +1,5 @@
 import os, scrapy
+from scrapy.http.request import Request
 from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.utils.python import unique
@@ -7,33 +8,39 @@ from ..items import PageItem, FileItem, VideoItem
 
 
 class WebSpider(CrawlSpider):
-    name = "web_spider"
-    start_urls = [os.environ.get("URL")]
+    name = "webspider"
+    login_url = os.environ.get("URL")
     attempts = 0
 
     web_domain = os.environ.get("URL").split("/")[2]
     home_page = "https://" + web_domain + "/dashboard/"
 
-    deny_list = ["logout", "next", "wp-login", "wp-admin"]
+    deny_list = ["logout", "next", "wp-login", "wp-admin", "wp-toolbar"]
 
     rules = (
+        # Rule for extracting files with extensions
+        Rule(
+            LinkExtractor(
+                deny="wp-content",
+                allow=r".+\.\w{1,5}(?=$)",
+                deny_extensions=["php"],
+            ),
+            callback="parse_file",
+        ),
         # Rule for extracting domain links to follow
         Rule(
             LinkExtractor(
-                deny=deny_list, allow_domains=web_domain, unique=True
+                allow_domains=web_domain,
+                deny=deny_list,
+                deny_extensions=["pdf", "zip", "xlsx", "docx", "rtf"],
             ),
             callback="parse_page",
             follow=True,
         ),
-        # Rule for extracting files with extensions
-        Rule(
-            LinkExtractor(allow=r".+\.\w{1,5}(?=$)", deny_extensions=[]),
-            callback="parse_file",
-        ),
         # Rule for extracting iframes
         Rule(
             LinkExtractor(
-                restrict_text="vimeo",
+                allow_domains="player.vimeo.com",
                 tags="iframe",
                 attrs=("data-src", "src"),
             ),
@@ -41,52 +48,62 @@ class WebSpider(CrawlSpider):
         ),
     )
 
-    def parse_start_url(self, response):
+    def start_requests(self):
+        login_url = self.login_url
+        self.logger.info(f"MYLOG: Logging in: {login_url}")
         formdata = {
             "log": os.environ.get("USER"),
             "pwd": os.environ.get("PASS"),
             "wp-submit": "Log In",
             "testcookie": "1",
         }
-        return scrapy.FormRequest.from_response(
-            response, formdata=formdata, callback=self.check_login
-        )
+        return [
+            scrapy.FormRequest(
+                login_url, formdata=formdata, callback=self.check_login
+            )
+        ]
 
     def check_login(self, response):
-        inspect_response(response, self)
         if "logout" in response.text and response.status < 400:
-            self.log(f"Login succeeded: {response.status}")
-            return scrapy.Request(self.home_page)
+            self.logger.info(f"MYLOG: Login succeeded: {response.status}")
+
+            home_page_links = LinkExtractor(
+                deny=self.deny_list, allow_domains=self.web_domain
+            ).extract_links(response)
+
+            for link in home_page_links:
+                yield Request(link.url)
 
         else:
             self.attempts += 1
             if self.attempts < 5:
-                self.log(
+                self.logger.warn(
                     f"Login failed: {response.status}\n"
                     f"Attempts: {self.attempts}\n"
                     "Reattempting login"
                 )
-                self.parse_start_url(self.start_urls[0])
+                return self.start_requests()
             else:
-                self.log("5 attempts failed")
+                self.logger.warn("5 attempts failed")
 
     def parse_file(self, response):
+        self.logger.info(f"Parsing file: {response.url}")
         file = FileItem()
 
         half, ext = response.url.rsplit(".", 1)
         title = half.rsplit("/", 1)[1]
 
-        file["req_url"] = response.request.header.get("Referer")
-        file["file_url"] = response.url
+        file["req_url"] = response.url
+
         file["title"] = title
-        file["body"] = response.body
-        file["extension"] = "." + ext
+        file["extension"] = ext
+
+        file["file_urls"] = [response.url]
 
         return file
 
     def parse_iframe(self, response):
-        video = VideoItem()
-
+        self.logger.info(f"Parsing iframe: {response.url}")
         raw_urls = response.css("script::text").re(
             r'"url":"(https://vod.*?\.mp4)".*?"quality":"(\d{3,4})p"'
         )
@@ -97,23 +114,34 @@ class WebSpider(CrawlSpider):
 
         title = response.css("title::text").get()[:-30]
 
-        video["req_url"] = response.request.header.get("Referer")
+        video = VideoItem()
+        video["req_url"] = str(
+            response.request.headers.get("Referer", None), "utf-8"
+        )
         video["iframe_url"] = response.url
-        video["vid_url"] = hq_url
+
         video["title"] = title
+        video["extension"] = hq_url.rsplit(".", 1)[1]
         video["quality"] = qual
-        video["extension"] = "." + hq_url.rsplit(".", 1)[1]
+
+        video["file_urls"] = [hq_url]
 
         return video
 
     def parse_page(self, response):
+        self.logger.info(f"Parsing page: {response.url}")
         page = PageItem()
-        page["page_url"] = response.url
+
         page["title"] = (
             response.css("title::text")
             .get()
             .replace(" \u2013 Members Area", "")
         )
-        page["body"] = response.body
+        page["extension"] = "html"
+
+        page["req_url"] = str(
+            response.request.headers.get("Referer", None), "utf-8"
+        )
+        page["file_urls"] = [response.url]
 
         return page
