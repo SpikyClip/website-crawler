@@ -3,4 +3,5 @@
 test_pages
 crawls
 *.ipynb
+items.csv
 __pycache__

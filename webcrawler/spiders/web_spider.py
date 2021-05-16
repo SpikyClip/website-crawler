@@ -4,29 +4,32 @@ from scrapy.spiders import CrawlSpider, Rule
 from scrapy.linkextractors import LinkExtractor
 from scrapy.utils.python import unique
 from scrapy.shell import inspect_response
+from urllib.parse import unquote
 from ..items import PageItem, FileItem, VideoItem
 
 
 class WebSpider(CrawlSpider):
     name = "webspider"
+
     login_url = os.environ.get("URL")
+    http_user = os.environ.get("USER")
+    http_pass = os.environ.get("PASS")
+
     attempts = 0
 
     web_domain = os.environ.get("URL").split("/")[2]
     home_page = "https://" + web_domain + "/dashboard/"
 
-    deny_list = ["logout", "next", "wp-login", "wp-admin", "wp-toolbar"]
+    deny_list = [
+        "logout",
+        "next",
+        "wp-login",
+        "wp-admin",
+        "wp-toolbar",
+        "wp-content",
+    ]
 
     rules = (
-        # Rule for extracting files with extensions
-        Rule(
-            LinkExtractor(
-                deny="wp-content",
-                allow=r".+\.\w{1,5}(?=$)",
-                deny_extensions=["php"],
-            ),
-            callback="parse_file",
-        ),
         # Rule for extracting domain links to follow
         Rule(
             LinkExtractor(
@@ -36,6 +39,14 @@ class WebSpider(CrawlSpider):
             ),
             callback="parse_page",
             follow=True,
+        ),
+        # Rule for extracting files with extensions
+        Rule(
+            LinkExtractor(
+                allow=r".+\.\w{1,5}(?=$)",
+                deny_extensions=["php"],
+            ),
+            callback="parse_file",
         ),
         # Rule for extracting iframes
         Rule(
@@ -52,8 +63,8 @@ class WebSpider(CrawlSpider):
         login_url = self.login_url
         self.logger.info(f"MYLOG: Logging in: {login_url}")
         formdata = {
-            "log": os.environ.get("USER"),
-            "pwd": os.environ.get("PASS"),
+            "log": self.http_user,
+            "pwd": self.http_pass,
             "wp-submit": "Log In",
             "testcookie": "1",
         }
@@ -67,12 +78,7 @@ class WebSpider(CrawlSpider):
         if "logout" in response.text and response.status < 400:
             self.logger.info(f"MYLOG: Login succeeded: {response.status}")
 
-            home_page_links = LinkExtractor(
-                deny=self.deny_list, allow_domains=self.web_domain
-            ).extract_links(response)
-
-            for link in home_page_links:
-                yield Request(link.url)
+            return Request(self.home_page, dont_filter=True)
 
         else:
             self.attempts += 1
@@ -86,16 +92,28 @@ class WebSpider(CrawlSpider):
             else:
                 self.logger.warn("5 attempts failed")
 
+    def parse_page(self, response):
+        page = PageItem()
+
+        page["title"] = os.path.basename(response.url.rstrip("/"))
+        page["extension"] = "html"
+
+        page["req_url"] = response.url
+        page["file_urls"] = [response.url]
+
+        return page
+
     def parse_file(self, response):
-        self.logger.info(f"Parsing file: {response.url}")
         file = FileItem()
 
         half, ext = response.url.rsplit(".", 1)
         title = half.rsplit("/", 1)[1]
 
-        file["req_url"] = response.url
+        file["req_url"] = str(
+            response.request.headers.get("Referer", None), "utf-8"
+        )
 
-        file["title"] = title
+        file["title"] = unquote(title)
         file["extension"] = ext
 
         file["file_urls"] = [response.url]
@@ -103,7 +121,6 @@ class WebSpider(CrawlSpider):
         return file
 
     def parse_iframe(self, response):
-        self.logger.info(f"Parsing iframe: {response.url}")
         raw_urls = response.css("script::text").re(
             r'"url":"(https://vod.*?\.mp4)".*?"quality":"(\d{3,4})p"'
         )
@@ -128,20 +145,5 @@ class WebSpider(CrawlSpider):
 
         return video
 
-    def parse_page(self, response):
-        self.logger.info(f"Parsing page: {response.url}")
-        page = PageItem()
 
-        page["title"] = (
-            response.css("title::text")
-            .get()
-            .replace(" \u2013 Members Area", "")
-        )
-        page["extension"] = "html"
-
-        page["req_url"] = str(
-            response.request.headers.get("Referer", None), "utf-8"
-        )
-        page["file_urls"] = [response.url]
-
-        return page
+# scrapy crawl webspider -s JOBDIR=crawls/webspider-1

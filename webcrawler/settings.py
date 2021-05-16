@@ -12,10 +12,6 @@ BOT_NAME = "webcrawler"
 SPIDER_MODULES = ["webcrawler.spiders"]
 NEWSPIDER_MODULE = "webcrawler.spiders"
 
-
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0"
-
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
@@ -66,6 +62,8 @@ FAKEUSERAGENT_PROVIDERS = [
     "scrapy_fake_useragent.providers.FakerProvider",  # if FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
     "scrapy_fake_useragent.providers.FixedUserAgentProvider",  # fall back to USER_AGENT value
 ]
+
+# Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0"
 
 # Enable or disable extensions
@@ -77,7 +75,6 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    # "scrapy.pipelines.files.FilesPipeline": 1,
     "webcrawler.pipelines.MyFilesPipeline": 1,
 }
 
@@ -85,6 +82,7 @@ FILES_STORE = "D:/scrape_downloads"
 
 DOWNLOAD_MAXSIZE = 2147483648
 DOWNLOAD_WARNSIZE = 1073741824
+DOWNLOAD_TIMEOUT = 240
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
@@ -94,7 +92,7 @@ AUTOTHROTTLE_START_DELAY = 5
 AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 0.5
 # Enable showing throttling stats for every response received:
 # AUTOTHROTTLE_DEBUG = False
 
@@ -107,7 +105,7 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 FEEDS = {
-    "items.csv": {
+    "file:///D:/scrape_downloads/items.csv": {
         "format": "csv",
     }
 }
@@ -121,5 +119,3 @@ FEED_EXPORT_FIELDS = [
     "file_urls",
     "files",
 ]
-
-# LOG_FILE = "log.txt"
