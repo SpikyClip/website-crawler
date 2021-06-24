@@ -90,7 +90,11 @@ class WebSpider(CrawlSpider):
 
         return [
             scrapy.FormRequest(
-                self.login_url, formdata=formdata, callback=self.check_login
+                self.login_url,
+                formdata=formdata,
+                # dont_filter=True to allow for later logins
+                dont_filter=True,
+                callback=self.check_login,
             )
         ]
 
