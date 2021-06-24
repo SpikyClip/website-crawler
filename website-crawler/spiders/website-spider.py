@@ -8,13 +8,13 @@ from scrapy.linkextractors import LinkExtractor
 from ..items import PageItem, FileItem, VideoItem
 
 
-class WebSpider(CrawlSpider):
+class WebsiteSpider(CrawlSpider):
     """
     Custom class that inherits from CrawlSpider with an additional login
     feature and rules for the extraction of files, videos, and html files
     """
 
-    name = "webspider"
+    name = "website-spider"
 
     # Gets sensitive information from env variables
     login_url = os.environ.get("URL")
@@ -202,5 +202,5 @@ class WebSpider(CrawlSpider):
         return video
 
 
-# Command for running webcrawler (for reference)
-# scrapy crawl webspider -s JOBDIR=crawls/webspider-1
+# Command for running website-crawler (for reference)
+# scrapy crawl website-spider -s JOBDIR=crawls/website-spider-1

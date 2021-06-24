@@ -1,4 +1,4 @@
-# Scrapy settings for webcrawler project
+# Scrapy settings for website-crawler project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -7,10 +7,10 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "webcrawler"
+BOT_NAME = "website-crawler"
 
-SPIDER_MODULES = ["webcrawler.spiders"]
-NEWSPIDER_MODULE = "webcrawler.spiders"
+SPIDER_MODULES = ["website-crawler.spiders"]
+NEWSPIDER_MODULE = "website-crawler.spiders"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -41,13 +41,13 @@ ROBOTSTXT_OBEY = False
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    'webcrawler.middlewares.WebcrawlerSpiderMiddleware': 543,
+#    'website-crawler.middlewares.WebcrawlerSpiderMiddleware': 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # DOWNLOADER_MIDDLEWARES = {
-#    'webcrawler.middlewares.WebcrawlerDownloaderMiddleware': 543,
+#    'website-crawler.middlewares.WebcrawlerDownloaderMiddleware': 543,
 # }
 
 DOWNLOADER_MIDDLEWARES = {
@@ -75,7 +75,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "webcrawler.pipelines.MyFilesPipeline": 1,
+    "website-crawler.pipelines.MyFilesPipeline": 1,
 }
 
 # Determines where scraped files should be stored
