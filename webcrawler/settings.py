@@ -78,10 +78,14 @@ ITEM_PIPELINES = {
     "webcrawler.pipelines.MyFilesPipeline": 1,
 }
 
+# Determines where scraped files should be stored
 FILES_STORE = "D:/scrape_downloads"
 
+# Max download size in bytes, ~2gb
 DOWNLOAD_MAXSIZE = 2147483648
+# Warn user at ~1gb
 DOWNLOAD_WARNSIZE = 1073741824
+# Timeout if download takes longer than 240 seconds
 DOWNLOAD_TIMEOUT = 240
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -104,6 +108,7 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 0.5
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
+# Generates a csv file to keep track of downloads
 FEEDS = {
     "file:///D:/scrape_downloads/items.csv": {
         "format": "csv",
